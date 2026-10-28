@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="650" viewBox="0 0 1440 650" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">PINTOS / Virtual Memory / Week 09–10</title>
+  <desc id="desc">Kernel Panic Club, Project 03. Neon lime and cyan on graphite. A conceptual memory map connects virtual pages to RAM frames and swap. Lazy loading, mmap and copy-on-write are the mission.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1440" y2="650" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10151a"/><stop offset="0.55" stop-color="#131b22"/><stop offset="1" stop-color="#1d2130"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1440" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c5f277"/><stop offset="0.55" stop-color="#8bdde7"/><stop offset="1" stop-color="#c4acff"/>
+    </linearGradient>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" stroke="#9bb4bc" stroke-opacity="0.065"/>
+    </pattern>
+    <clipPath id="canvas"><rect width="1440" height="650" rx="26"/></clipPath>
+  </defs>
+  <g clip-path="url(#canvas)">
+    <rect width="1440" height="650" fill="url(#background)"/>
+    <rect width="1440" height="650" fill="url(#grid)"/>
+    <circle cx="1186" cy="320" r="320" stroke="#8bdde7" stroke-opacity="0.07"/>
+    <circle cx="1186" cy="320" r="250" stroke="#8bdde7" stroke-opacity="0.045"/>
+    <rect width="1440" height="5" fill="url(#accent)"/>
+    <rect x="1" y="1" width="1438" height="648" rx="25" stroke="#334149"/>
+
+    <g font-family="Arial, Helvetica, sans-serif">
+      <rect x="58" y="48" width="11" height="11" rx="2" fill="#c5f277"/>
+      <rect x="74" y="48" width="11" height="11" rx="2" fill="#c5f277" fill-opacity="0.3"/>
+      <text x="102" y="60" fill="#e6eee8" font-size="13" font-weight="700" letter-spacing="2.8">KRAFTON JUNGLE / SYSTEMS LAB</text>
+      <rect x="1137" y="36" width="246" height="36" rx="18" fill="#222b29" stroke="#4b6350"/>
+      <circle cx="1158" cy="54" r="4" fill="#c5f277"/>
+      <text x="1173" y="59" fill="#d6eac2" font-size="12" font-weight="700" letter-spacing="1.8">WEEK 09—10 / 2 WEEKS</text>
+
+      <text x="49" y="222" fill="#f2f4e9" font-size="150" font-weight="900" letter-spacing="-9">PINTOS</text>
+      <text x="646" y="157" fill="#c5f277" font-size="42" font-weight="700" letter-spacing="-2">03</text>
+      <path d="M650 175H698" stroke="#c5f277" stroke-width="3"/>
+      <rect x="59" y="248" width="237" height="30" rx="5" fill="#c5f277"/>
+      <text x="72" y="268" fill="#152016" font-size="14" font-weight="900" letter-spacing="2.2">KERNEL PANIC CLUB</text>
+
+      <text x="56" y="348" fill="#eaf0e6" font-size="49" font-weight="700" letter-spacing="-1.8">Less RAM.</text>
+      <text x="56" y="407" fill="#c5f277" font-size="49" font-weight="700" letter-spacing="-1.8">More possibility.</text>
+      <text x="59" y="449" fill="#a5b3b8" font-size="17">Bring pages to life. Keep every byte accounted for.</text>
+
+      <rect x="59" y="485" width="113" height="29" rx="14.5" fill="#202b28" stroke="#48634b"/>
+      <text x="115.5" y="504" text-anchor="middle" fill="#c5f277" font-size="11" font-weight="700" letter-spacing="1">LAZY LOAD</text>
+      <rect x="181" y="485" width="87" height="29" rx="14.5" fill="#1d2c32" stroke="#3d6470"/>
+      <text x="224.5" y="504" text-anchor="middle" fill="#8bdde7" font-size="11" font-weight="700" letter-spacing="1">SWAP</text>
+      <rect x="277" y="485" width="87" height="29" rx="14.5" fill="#1d2c32" stroke="#3d6470"/>
+      <text x="320.5" y="504" text-anchor="middle" fill="#8bdde7" font-size="11" font-weight="700" letter-spacing="1">MMAP</text>
+      <rect x="373" y="485" width="151" height="29" rx="14.5" fill="#292538" stroke="#61517c"/>
+      <text x="448.5" y="504" text-anchor="middle" fill="#cfbaff" font-size="11" font-weight="700" letter-spacing="1">COPY-ON-WRITE</text>
+
+      <path d="M59 557H1380" stroke="#34434a"/>
+      <text x="60" y="604" fill="#f1f4e8" font-size="14" font-weight="700" letter-spacing="2">VIRTUAL MEMORY</text>
+      <text x="273" y="604" fill="#98a9b0" font-size="13" letter-spacing="1.5">x86-64 / C + ASM / QEMU</text>
+      <text x="1380" y="604" text-anchor="end" fill="#c5f277" font-size="12" font-weight="700" letter-spacing="2">FAULT. FIND. FETCH. RESUME.</text>
+    </g>
+
+    <g transform="translate(819 112)">
+      <rect x="9" y="12" width="561" height="407" rx="17" fill="#070b0f" fill-opacity="0.5"/>
+      <rect width="561" height="407" rx="17" fill="#141e26" stroke="#40535d"/>
+      <path d="M0 43H561" stroke="#354650"/>
+      <circle cx="22" cy="22" r="4" fill="#ed9aae"/>
+      <circle cx="38" cy="22" r="4" fill="#ffd38a"/>
+      <circle cx="54" cy="22" r="4" fill="#c5f277"/>
+      <text x="76" y="26" fill="#9eb2bb" font-family="Consolas, monospace" font-size="11" letter-spacing="0.5">MEMORY MAP / CONCEPT VIEW</text>
+      <rect x="452" y="13" width="89" height="18" rx="9" fill="#273827"/>
+      <text x="496.5" y="26" text-anchor="middle" fill="#c5f277" font-family="Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.3">PROJECT 03</text>
+
+      <g font-family="Consolas, monospace" font-size="11">
+        <text x="25" y="76" fill="#8bdde7" letter-spacing="1.3">VIRTUAL PAGES</text>
+        <text x="340" y="76" fill="#c5f277" letter-spacing="1.3">RAM / BACKING STORE</text>
+
+        <rect x="24" y="94" width="168" height="43" rx="7" fill="#1b2d34" stroke="#507d89"/>
+        <text x="39" y="120" fill="#c3eaf0">0x0040 0000</text>
+        <rect x="24" y="151" width="168" height="43" rx="7" fill="#1b2d34" stroke="#507d89"/>
+        <text x="39" y="177" fill="#c3eaf0">0x0040 1000</text>
+        <rect x="24" y="208" width="168" height="43" rx="7" fill="#252335" stroke="#8a72ac" stroke-dasharray="4 4"/>
+        <text x="39" y="234" fill="#d5c3ed">0x0040 2000</text>
+
+        <rect x="339" y="94" width="198" height="43" rx="7" fill="#243125" stroke="#739458"/>
+        <text x="355" y="120" fill="#d5efb5">FRAME 07 / RAM</text>
+        <rect x="339" y="151" width="198" height="43" rx="7" fill="#243125" stroke="#739458"/>
+        <text x="355" y="177" fill="#d5efb5">FRAME 12 / RAM</text>
+        <rect x="339" y="208" width="198" height="43" rx="7" fill="#2b2638" stroke="#8a72ac"/>
+        <text x="355" y="234" fill="#d5c3ed">SLOT 03 / SWAP</text>
+
+        <path d="M199 115H329M323 110L329 115L323 120" stroke="#c5f277" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M199 172H329M323 167L329 172L323 177" stroke="#c5f277" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M199 229H329" stroke="#c4acff" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <text x="264" y="104" text-anchor="middle" fill="#80969b" font-size="9">mapped</text>
+        <text x="264" y="218" text-anchor="middle" fill="#ad97cb" font-size="9">nonresident</text>
+
+        <path d="M24 273H537" stroke="#354650"/>
+        <text x="25" y="298" fill="#7f96a1">[ fault ]</text><text x="119" y="298" fill="#d5e3e8">find the page, restore the data</text>
+        <text x="25" y="323" fill="#7f96a1">[ share ]</text><text x="119" y="323" fill="#d5e3e8">fork now, copy on first write</text>
+        <text x="25" y="348" fill="#7f96a1">[ scope ]</text><text x="119" y="348" fill="#c5f277">VM + COW / ALL REQUIRED</text>
+        <rect x="25" y="370" width="7" height="12" fill="#c5f277"/>
+        <text x="41" y="380" fill="#738c97" font-size="10">one page at a time.</text>
+      </g>
+    </g>
+  </g>
+</svg>
