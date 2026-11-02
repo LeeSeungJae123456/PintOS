@@ -80,11 +80,22 @@ check_user_buffer(const void *buffer, unsigned len, bool writable)
 #ifdef VM
 			struct page *page = spt_find_page(&curr->spt, (void *)pg);
 
-			if (page == NULL || (writable && !page->writable))
-				exit_helper(-1);
+			if (page == NULL)
+			{ // spt에 페이지 없으면 스택 증가 판별
+				// 실제로 접근하는 주소
+				uintptr_t access_addr = pg < (uintptr_t)buffer ? (uintptr_t)buffer : pg;
 
-			if (!vm_claim_page((void *)pg))
-				exit_helper(-1);
+				if (!vm_try_handle_fault(NULL, (void *)access_addr, false, writable, true))
+					exit_helper(-1);
+			}
+			else
+			{ // spt에 이미 있으면 새 스택 페이지가 아님
+				if (writable && !page->writable) // 커널이 써야 하는데 not writable 하면 종료
+					exit_helper(-1);
+
+				if (!vm_claim_page((void *)pg)) // 클레임한다
+					exit_helper(-1);
+			}
 #else
 			exit_helper(-1);
 #endif
