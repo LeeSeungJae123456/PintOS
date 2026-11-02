@@ -249,16 +249,21 @@ static bool
 vm_stack_growth(void *addr)
 {
 	addr = pg_round_down(addr);
+
 	if (!vm_alloc_page(VM_ANON, addr, true))
-	{
 		return false;
-	}
+
 	if (!vm_claim_page(addr))
 	{
-		struct page *temp_remove_page = spt_find_page(&thread_current()->spt, addr);
-		spt_remove_page(&thread_current()->spt, temp_remove_page);
+		// 클레임 실패하면 제거
+		struct page *page = spt_find_page(&thread_current()->spt, addr);
+
+		if (page != NULL)
+			spt_remove_page(&thread_current()->spt, page);
+
 		return false;
 	}
+
 	return true;
 }
 
@@ -289,23 +294,26 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr, bool user, bool write
 		}
 		return vm_do_claim_page(page);
 	}
+
+	// set rsp
 	if (user)
-	{
 		rsp = f->rsp;
-	}
 	else
-	{
 		rsp = thread_current()->user_rsp;
-	}
-	if (rsp == 0 || (uintptr_t)addr >= (uintptr_t)USER_STACK || (uintptr_t)addr < (uintptr_t)USER_STACK - STACK_MAX || ((uintptr_t)addr < (uintptr_t)rsp && (uintptr_t)rsp - (uintptr_t)addr > 8))
-	{
+
+	// fault 주소 판별
+	uintptr_t fault_addr = (uintptr_t)addr;
+	uintptr_t stack_top = (uintptr_t)USER_STACK;
+	uintptr_t stack_bottom = stack_top - STACK_MAX;
+
+	if (rsp == 0
+		|| fault_addr >= stack_top // top보다 크거나 같으면
+		|| fault_addr < stack_bottom // bottom 보다 작으면
+		|| (fault_addr < rsp && rsp - fault_addr > 8)) //rsp와 8바이트 이상 차이나는지
 		return false;
-	}
-	else
-	{
-		addr = pg_round_down(addr);
-		return vm_stack_growth(addr); /* Stack growth is not implemented yet. */
-	}
+
+	// 성장 함수 호출
+	return vm_stack_growth(addr);
 }
 
 /* Free the page.
