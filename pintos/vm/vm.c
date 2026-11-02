@@ -197,6 +197,7 @@ vm_stack_growth(void *addr)
 	
 	if (!vm_claim_page(addr))
 	{
+		// 클레임 실패하면 제거
 		struct page *page = spt_find_page(&thread_current()->spt, addr);
 
 		if (page != NULL)
