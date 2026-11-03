@@ -18,10 +18,16 @@ static bool page_less(const struct hash_elem *a,
 static bool vm_stack_growth(void *addr);
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
+static struct list frame_table;
+static struct lock frame_table_lock;
+static struct lock evict_lock;
 void vm_init(void)
 {
 	vm_anon_init();
 	vm_file_init();
+	list_init(&frame_table);
+	lock_init(&frame_table_lock);
+	lock_init(&evict_lock);
 #ifdef EFILESYS /* For project 4 */
 	pagecache_init();
 #endif
@@ -135,8 +141,13 @@ bool spt_insert_page(struct supplemental_page_table *spt,
 }
 void spt_remove_page(struct supplemental_page_table *spt, struct page *page)
 {
+	if (page == NULL)
+	{
+		return;
+	}
+	hash_delete(&spt->pages, &page->hash_elem);
 	vm_dealloc_page(page);
-	return true;
+	return;
 }
 
 /* Get the struct frame, that will be evicted. */
@@ -144,8 +155,27 @@ static struct frame *
 vm_get_victim(void)
 {
 	struct frame *victim = NULL;
-	/* TODO: The policy for eviction is up to you. */
+	lock_acquire(&frame_table_lock);
+	if (!list_empty(&frame_table))
+	{
+		for (struct list_elem *temp_list_victim = list_begin(&frame_table); temp_list_victim != list_end(&frame_table); temp_list_victim = list_next(temp_list_victim))
+		{
+			struct frame *temp_frame_victim = list_entry(temp_list_victim, struct frame, elem);
 
+			if (temp_frame_victim != NULL)
+			{
+				if (temp_frame_victim->page != NULL && temp_frame_victim->pined == false)
+				{
+					victim = temp_frame_victim;
+					temp_frame_victim->pined = true;
+					lock_release(&frame_table_lock);
+					return victim;
+				}
+			}
+		}
+	}
+	lock_release(&frame_table_lock);
+	victim = NULL;
 	return victim;
 }
 
@@ -154,10 +184,35 @@ vm_get_victim(void)
 static struct frame *
 vm_evict_frame(void)
 {
-	struct frame *victim UNUSED = vm_get_victim();
+	lock_acquire(&evict_lock);
+	struct frame *victim = vm_get_victim();
+	if (victim == NULL)
+	{
+		lock_release(&evict_lock);
+		return NULL;
+	}
 	/* TODO: swap out the victim and return the evicted frame. */
-
-	return NULL;
+	struct page *evict_page = victim->page;
+	if (victim->page == NULL)
+	{
+		lock_acquire(&frame_table_lock);
+		victim->pined = false;
+		lock_release(&frame_table_lock);
+		lock_release(&evict_lock);
+		return NULL;
+	}
+	if (!swap_out(evict_page))
+	{
+		lock_acquire(&frame_table_lock);
+		victim->pined = false;
+		lock_release(&frame_table_lock);
+		lock_release(&evict_lock);
+		return NULL;
+	}
+	victim->page = NULL;
+	evict_page->frame = NULL;
+	lock_release(&evict_lock);
+	return victim;
 }
 
 /* palloc() and get frame. If there is no available page, evict the page
@@ -180,8 +235,11 @@ vm_get_frame(void)
 		return frame;
 	}
 	frame->page = NULL;
-	frame->pined = false;
+	frame->pined = true;
 	ASSERT(frame->page == NULL);
+	lock_acquire(&frame_table_lock);
+	list_push_back(&frame_table, &frame->elem);
+	lock_release(&frame_table_lock);
 	return frame;
 }
 // TODO eviction  pin 관리필요
@@ -194,7 +252,7 @@ vm_stack_growth(void *addr)
 
 	if (!vm_alloc_page(VM_ANON, addr, true))
 		return false;
-	
+
 	if (!vm_claim_page(addr))
 	{
 		// 클레임 실패하면 제거
@@ -202,10 +260,10 @@ vm_stack_growth(void *addr)
 
 		if (page != NULL)
 			spt_remove_page(&thread_current()->spt, page);
-		
+
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -253,7 +311,7 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr, bool user, bool write
 		|| fault_addr < stack_bottom // bottom 보다 작으면
 		|| (fault_addr < rsp && rsp - fault_addr > 8)) //rsp와 8바이트 이상 차이나는지
 		return false;
-	
+
 	// 성장 함수 호출
 	return vm_stack_growth(addr);
 }
@@ -306,6 +364,9 @@ vm_do_claim_page(struct page *page)
 	{
 		frame->page = NULL;
 		page->frame = NULL;
+		lock_acquire(&frame_table_lock);
+		list_remove(&frame->elem);
+		lock_release(&frame_table_lock);
 		palloc_free_page(frame->kva);
 		free(frame);
 		return false;
@@ -316,10 +377,17 @@ vm_do_claim_page(struct page *page)
 		pml4_clear_page(thread_current()->pml4, page->va);
 		frame->page = NULL;
 		page->frame = NULL;
+		lock_acquire(&frame_table_lock);
+		list_remove(&frame->elem);
+		lock_release(&frame_table_lock);
 		palloc_free_page(frame->kva);
 		free(frame);
 		return false;
 	}
+	lock_acquire(&frame_table_lock);
+	frame->pined = false;
+	page->owner_pml4 = thread_current()->pml4;
+	lock_release(&frame_table_lock);
 	return true;
 }
 
@@ -359,6 +427,9 @@ vm_do_claim_parent_page(struct page *page, uint64_t *parent_pml4)
 	{
 		frame->page = NULL;
 		page->frame = NULL;
+		lock_acquire(&frame_table_lock);
+		list_remove(&frame->elem);
+		lock_release(&frame_table_lock);
 		palloc_free_page(frame->kva);
 		free(frame);
 		return false;
@@ -369,10 +440,17 @@ vm_do_claim_parent_page(struct page *page, uint64_t *parent_pml4)
 		pml4_clear_page(parent_pml4, page->va);
 		frame->page = NULL;
 		page->frame = NULL;
+		lock_acquire(&frame_table_lock);
+		list_remove(&frame->elem);
+		lock_release(&frame_table_lock);
 		palloc_free_page(frame->kva);
 		free(frame);
 		return false;
 	}
+	lock_acquire(&frame_table_lock);
+	page->owner_pml4 = parent_pml4;
+	frame->pined = false;
+	lock_release(&frame_table_lock);
 	return true;
 }
 
@@ -399,7 +477,9 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
 						return false;
 					}
 				}
+				lock_acquire(&frame_table_lock);
 				searching_page->frame->pined = true;
+				lock_release(&frame_table_lock);
 				enum vm_type searching_page_type = page_get_type(searching_page);
 				if (!vm_alloc_page_with_initializer(searching_page_type, searching_page->va, searching_page->writable, NULL, NULL))
 				{
@@ -414,7 +494,9 @@ bool supplemental_page_table_copy(struct supplemental_page_table *dst,
 				}
 				copy_page->frame->pined = true;
 				memcpy(copy_page->frame->kva, searching_page->frame->kva, PGSIZE);
+				lock_acquire(&frame_table_lock);
 				searching_page->frame->pined = false;
+				lock_release(&frame_table_lock);
 				copy_page->frame->pined = false;
 			}
 		}
@@ -457,4 +539,10 @@ bool page_less(const struct hash_elem *a, const struct hash_elem *b, void *aux U
 		return true;
 	}
 	return false;
+}
+void vm_remove_frame(struct frame *frame)
+{
+	lock_acquire(&frame_table_lock);
+	list_remove(&frame->elem);
+	lock_release(&frame_table_lock);
 }
