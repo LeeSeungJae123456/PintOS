@@ -611,6 +611,7 @@ init_thread(struct thread *t, const char *name, int priority)
 
 	/* wait 관련 초기화 */
 	list_init(&t->children);
+	list_init(&t->mmap_list);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should

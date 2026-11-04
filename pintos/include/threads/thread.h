@@ -88,7 +88,7 @@ struct thread
 
     struct list children;            /* 후레자식들 */
     struct child_status *own_status; /* 상태를 전달하기 위한 구조체 */
-
+    struct list mmap_list;
     struct file **fd_table; /* FD table */
     struct file *exec_file;
 

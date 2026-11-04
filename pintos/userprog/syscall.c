@@ -14,6 +14,7 @@
 #include "filesys/file.h"
 #include "threads/init.h"
 #include "devices/input.h"
+#include "vm/file.h"
 
 #include "include/lib/kernel/stdio.h"
 #ifdef VM
@@ -372,6 +373,33 @@ void syscall_handler(struct intr_frame *f)
 			lock_release(&filesys_lock);
 			thread_current()->fd_table[fd] = NULL;
 		}
+		break;
+	}
+	case SYS_MMAP:
+	{
+		if (((int)f->R.r10) <= 1)
+		{
+			f->R.rax = 0;
+			break;
+		}
+		struct file *file = lookup_file((int)f->R.r10);
+		if (file == NULL)
+		{
+			f->R.rax = 0;
+			break;
+		}
+		f->R.rax = (uint64_t)do_mmap(
+			(void *)f->R.rdi,
+			(size_t)f->R.rsi,
+			(int)f->R.rdx,
+			file,
+			(off_t)f->R.r8);
+		break;
+	}
+	case SYS_MUNMAP:
+	{
+		do_munmap(
+			(void *)f->R.rdi);
 		break;
 	}
 	default:

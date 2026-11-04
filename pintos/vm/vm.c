@@ -168,6 +168,8 @@ vm_get_victim(void)
 				{
 					victim = temp_frame_victim;
 					temp_frame_victim->pined = true;
+					list_remove(&temp_frame_victim->elem);
+					list_push_back(&frame_table, &temp_frame_victim->elem);
 					lock_release(&frame_table_lock);
 					return victim;
 				}
@@ -306,10 +308,9 @@ bool vm_try_handle_fault(struct intr_frame *f, void *addr, bool user, bool write
 	uintptr_t stack_top = (uintptr_t)USER_STACK;
 	uintptr_t stack_bottom = stack_top - STACK_MAX;
 
-	if (rsp == 0
-		|| fault_addr >= stack_top // top보다 크거나 같으면
-		|| fault_addr < stack_bottom // bottom 보다 작으면
-		|| (fault_addr < rsp && rsp - fault_addr > 8)) //rsp와 8바이트 이상 차이나는지
+	if (rsp == 0 || fault_addr >= stack_top			   // top보다 크거나 같으면
+		|| fault_addr < stack_bottom				   // bottom 보다 작으면
+		|| (fault_addr < rsp && rsp - fault_addr > 8)) // rsp와 8바이트 이상 차이나는지
 		return false;
 
 	// 성장 함수 호출
